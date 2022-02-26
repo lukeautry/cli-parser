@@ -4,16 +4,11 @@ import {
   CLIType,
   CommandArgs,
   IArgumentOptions,
-  ICommandLike,
+  IBuilder,
+  ICommand,
   ICommandList,
-  ITerminalCommand,
   OptionalityFromArgumentOptions,
 } from "./types.ts";
-
-interface ICreateCLIResponse {
-  ok: boolean;
-  message?: string;
-}
 
 const parseArgs = <
   T extends Record<string, IArgumentOptions<CLIType>>,
@@ -71,9 +66,9 @@ const parseArgs = <
   }, {} as any);
 };
 
-const getTerminalCommandHelpText = <
-  T extends CommandArgs,
->(config: ITerminalCommand<T>) => {
+const getCommandHelpText = <
+  A extends CommandArgs,
+>(config: ICommand<A>) => {
   return `
 USAGE: $ [OPTIONS]
 ${config.description ? `\r\n${config.description}\r\n` : ""}
@@ -93,69 +88,104 @@ ${
   `;
 };
 
-const getCommandListHelpText = <A extends CommandArgs>(
-  config: ICommandList<A>,
+const getCommandListHelpText = (
+  name: string,
+  list: ICommandList,
 ) => {
+  const commands = getListCommands(list);
+
+  console.log({ commands });
+
   return `
-USAGE: $ [COMMAND] [OPTIONS]
-${config.description ? `\r\n${config.description}\r\n` : ""}
+USAGE: ${name} [COMMAND] [OPTIONS]
+${list.description ? `\r\n${list.description}\r\n` : ""}
 COMMANDS:
 
 ${
-    Object.keys(config.commands).map((key) => {
-      const value = config.commands[key];
+    Object.keys(commands).map((key) => {
+      const value = commands[key];
       return `  ${key}: ${value.description}`;
     }).join("\r\n\r\n")
   }
   `;
 };
 
-export const parse = <A extends CommandArgs>(
+const getListCommands = (list: ICommandList) => {
+  // deno-lint-ignore no-explicit-any
+  const commands = {} as Record<string, ICommand<any> | ICommandList>;
+
+  const builder: IBuilder = {
+    command: (name, options) => {
+      commands[name] = options;
+
+      return builder;
+    },
+    list: (name, options) => {
+      commands[name] = options;
+
+      return builder;
+    },
+  };
+
+  list.commands(builder);
+  return commands;
+};
+
+export const cliParser = (
   args: Args,
-  config: ICommandLike<A>,
-): ICreateCLIResponse => {
-  try {
-    if (config.type === "command") {
+  fn: (builder: IBuilder) => void,
+  onEmit = (message: string, _exitCode: number) => {
+    console.log(message);
+  },
+): void => {
+  const builder: IBuilder = {
+    command: (_name, options) => {
       if (args.help === true) {
-        return {
-          ok: true,
-          message: getTerminalCommandHelpText(config),
-        };
+        onEmit(getCommandHelpText(options), 0);
+        return builder;
       }
 
       if (args._.length > 0) {
-        throw new Error(`unknown command: ${args._[0]}`);
+        onEmit(`unknown command: ${args._[0]}`, 1);
+        return builder;
       }
 
-      config.run(parseArgs(args, config.args));
-      return { ok: true };
-    }
+      try {
+        options.run(parseArgs(args, options.args));
+      } catch (err) {
+        onEmit(err.message, 1);
+      }
 
-    const commandInput = args._[0];
-    if (!commandInput) {
-      throw new Error(getCommandListHelpText(config));
-    }
+      return builder;
+    },
+    list: (name, list) => {
+      const commands = getListCommands(list);
 
-    const subcommand = config.commands[commandInput];
-    if (!subcommand) {
-      throw new Error(`unknown command: ${commandInput}`);
-    }
+      const commandInput = args._[0];
+      if (!commandInput) {
+        onEmit(getCommandListHelpText(name, list), 1);
+        return;
+      }
 
-    return parse({
-      ...args,
-      _: args._.slice(1),
-    }, subcommand);
-  } catch (err) {
-    return { ok: false, message: err.message };
-  }
-};
+      const subcommand = commands[commandInput];
+      if (!subcommand) {
+        onEmit(`unknown command: ${commandInput}`, 1);
+        return;
+      }
 
-export const execute = <A extends CommandArgs>(
-  args: Args,
-  config: ICommandLike<A>,
-) => {
-  const { message } = parse(args, config);
-  if (message) {
-    console.log(message);
-  }
+      cliParser(
+        {
+          ...args,
+          _: args._.slice(1),
+        },
+        (b) =>
+          "run" in subcommand
+            ? b.command(name, subcommand)
+            : b.list(name, subcommand),
+        onEmit,
+      );
+    },
+  };
+
+  fn(builder);
 };

@@ -1,3 +1,28 @@
+export interface IBuilder {
+  command: <A extends CommandArgs>(
+    name: string,
+    options: ICommand<A>,
+  ) => IBuilder;
+  list: (name: string, options: ICommandList) => void;
+}
+
+export type CommandArgs = {
+  [key: string]: IArgumentOptions<CLIType>;
+};
+
+export interface ICommand<
+  A extends CommandArgs,
+> {
+  args: A;
+  run: (args: ParsedArgumentType<A>) => void;
+  description: string;
+}
+
+export interface ICommandList {
+  description: string;
+  commands: (builder: IBuilder) => IBuilder | void;
+}
+
 export interface CLITypes {
   "string": string;
   "integer": number;
@@ -13,27 +38,6 @@ export interface IArgumentOptions<T extends CLIType> {
   optional?: boolean;
   description?: string;
 }
-
-export type CommandArgs = Record<string, IArgumentOptions<CLIType>>;
-
-export interface ITerminalCommand<
-  A extends CommandArgs,
-> {
-  type: "command";
-  args: A;
-  run: (args: ParsedArgumentType<A>) => void;
-  description: string;
-}
-
-export interface ICommandList<A extends CommandArgs> {
-  type: "command-list";
-  commands: Record<string, ICommandLike<A>>;
-  description: string;
-}
-
-export type ICommandLike<A extends CommandArgs> =
-  | ITerminalCommand<A>
-  | ICommandList<A>;
 
 export type ArrayOrSingleFromArgumentOptions<
   T extends IArgumentOptions<CLIType>,

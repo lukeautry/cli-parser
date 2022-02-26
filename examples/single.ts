@@ -1,17 +1,17 @@
-import { execute } from "../mod.ts";
+import { cliParser } from "../mod.ts";
 import { parse } from "https://deno.land/std/flags/mod.ts";
 
-execute(parse(Deno.args), {
-  type: "command",
-  description: "this is a CLI with only one command",
-  args: {
-    first: {
-      type: "string",
-      description: "this is the first argument",
+cliParser(parse(Deno.args), (b) =>
+  b.command("deno run examples/single.ts", {
+    description: "This is a CLI with only one command",
+    args: {
+      first: {
+        type: "string",
+        description: "This is the first argument",
+      },
+      second: {
+        type: "integer",
+      },
     },
-    second: {
-      type: "integer",
-    },
-  },
-  run: (val) => console.log(val),
-});
+    run: (val) => console.log(val),
+  }));

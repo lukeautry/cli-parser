@@ -1,42 +1,34 @@
-import { execute } from "../mod.ts";
+import { cliParser } from "../mod.ts";
 import { parse } from "https://deno.land/std/flags/mod.ts";
-
-execute(parse(Deno.args), {
-  type: "command-list",
-  description: "this is a CLI with multiple commands",
-  commands: {
-    first: {
-      type: "command-list",
-      description: "first command",
-
-      commands: {
-        second: {
-          type: "command",
-          description: "second command",
-          args: {
-            b: {
-              type: "string",
+cliParser(parse(Deno.args), (b) =>
+  b.list("deno run examples/nested.ts", {
+    description: "This is a CLI with multiple commands",
+    commands: (b) =>
+      b.list("first", {
+        description: "First command",
+        commands: (b) =>
+          b.command("second", {
+            description: "Second command",
+            args: {
+              b: {
+                type: "string",
+              },
+              c: {
+                type: "integer",
+              },
+              d: {
+                type: "boolean",
+              },
             },
-            c: {
-              type: "integer",
+            run: (v) => console.log(v),
+          }).command("third", {
+            description: "Third command",
+            args: {
+              b: {
+                type: "string",
+              },
             },
-            d: {
-              type: "boolean",
-            },
-          },
-          run: (v) => console.log(v),
-        },
-        third: {
-          type: "command",
-          description: "third command",
-          args: {
-            b: {
-              type: "string",
-            },
-          },
-          run: (v) => console.log(v),
-        },
-      },
-    },
-  },
-});
+            run: (v) => console.log(v),
+          }),
+      }),
+  }));
