@@ -1,22 +1,24 @@
 export interface IBuilder {
-  command: <A extends CommandArgs>(
+  command: (
     name: string,
-    options: ICommand<A>,
+    options: ICommand,
   ) => IBuilder;
   list: (name: string, options: ICommandList) => void;
 }
 
-export type CommandArgs = {
-  [key: string]: IArgumentOptions<CLIType>;
-};
-
-export interface ICommand<
-  A extends CommandArgs,
-> {
-  args: A;
-  run: (args: ParsedArgumentType<A>) => void;
+export interface ICommand {
   description: string;
+  args: (a: IArgumentsBuilder) => null;
 }
+
+// deno-lint-ignore ban-types
+export type IArgumentsBuilder<T = {}> = {
+  add: <N extends string, K extends CLIType, O extends IArgumentOptions<K>>(
+    name: N,
+    options: O,
+  ) => IArgumentsBuilder<T & { [P in N]: TypeFromArgumentOptions<O> }>;
+  run: (fn: (args: T) => void) => null;
+};
 
 export interface ICommandList {
   description: string;
@@ -33,10 +35,10 @@ export interface CLITypes {
 export type CLIType = keyof CLITypes;
 
 export interface IArgumentOptions<T extends CLIType> {
-  type: T;
-  array?: boolean;
-  optional?: boolean;
-  description?: string;
+  readonly type: T;
+  readonly array?: boolean;
+  readonly optional?: boolean;
+  readonly description?: string;
 }
 
 export type ArrayOrSingleFromArgumentOptions<
@@ -49,9 +51,10 @@ export type OptionalityFromArgumentOptions<
   ? ArrayOrSingleFromArgumentOptions<T> | undefined
   : ArrayOrSingleFromArgumentOptions<T>;
 
-export type TypeFromArgumentOptions<T extends IArgumentOptions<CLIType>> =
-  OptionalityFromArgumentOptions<T>;
+export type TypeFromArgumentOptions<
+  T extends IArgumentOptions<CLIType>,
+> = OptionalityFromArgumentOptions<T>;
 
 export type ParsedArgumentType<
-  A extends CommandArgs,
+  A extends Record<string, IArgumentOptions<CLIType>>,
 > = { [P in keyof A]: TypeFromArgumentOptions<A[P]> };

@@ -2,8 +2,8 @@ import { Args } from "https://deno.land/std@0.126.0/flags/mod.ts";
 import { typeValidators } from "./type-validators.ts";
 import {
   CLIType,
-  CommandArgs,
   IArgumentOptions,
+  IArgumentsBuilder,
   IBuilder,
   ICommand,
   ICommandList,
@@ -66,9 +66,7 @@ const parseArgs = <
   }, {} as any);
 };
 
-const getCommandHelpText = <
-  A extends CommandArgs,
->(config: ICommand<A>) => {
+const getCommandHelpText = (config: ICommand) => {
   return `
 USAGE: $ [OPTIONS]
 ${config.description ? `\r\n${config.description}\r\n` : ""}
@@ -111,8 +109,7 @@ ${
 };
 
 const getListCommands = (list: ICommandList) => {
-  // deno-lint-ignore no-explicit-any
-  const commands = {} as Record<string, ICommand<any> | ICommandList>;
+  const commands = {} as Record<string, ICommand | ICommandList>;
 
   const builder: IBuilder = {
     command: (name, options) => {
@@ -151,7 +148,21 @@ export const cliParser = (
       }
 
       try {
-        options.run(parseArgs(args, options.args));
+        const commandArgs = {} as Record<string, IArgumentOptions<CLIType>>;
+
+        const builder: IArgumentsBuilder = {
+          add: (name, options) => {
+            commandArgs[name] = options;
+            // deno-lint-ignore no-explicit-any
+            return builder as IArgumentsBuilder<any>;
+          },
+          run: (fn) => {
+            fn(parseArgs(args, commandArgs));
+            return null;
+          },
+        };
+
+        options.args(builder);
       } catch (err) {
         onEmit(err.message, 1);
       }
@@ -179,7 +190,7 @@ export const cliParser = (
           _: args._.slice(1),
         },
         (b) =>
-          "run" in subcommand
+          "args" in subcommand
             ? b.command(name, subcommand)
             : b.list(name, subcommand),
         onEmit,

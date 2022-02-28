@@ -1,5 +1,6 @@
 import { cliParser } from "../mod.ts";
 import { parse } from "https://deno.land/std/flags/mod.ts";
+
 cliParser(parse(Deno.args), (b) =>
   b.list("deno run examples/nested.ts", {
     description: "This is a CLI with multiple commands",
@@ -9,26 +10,18 @@ cliParser(parse(Deno.args), (b) =>
         commands: (b) =>
           b.command("second", {
             description: "Second command",
-            args: {
-              b: {
-                type: "string",
-              },
-              c: {
-                type: "integer",
-              },
-              d: {
-                type: "boolean",
-              },
-            },
-            run: (v) => console.log(v),
+            args: (a) =>
+              a
+                .add("b", { type: "string" })
+                .add("c", { type: "integer" })
+                .add(
+                  "d",
+                  { type: "boolean" },
+                )
+                .run(console.log),
           }).command("third", {
             description: "Third command",
-            args: {
-              b: {
-                type: "string",
-              },
-            },
-            run: (v) => console.log(v),
+            args: (a) => a.add("b", { type: "string" }).run(console.log),
           }),
       }),
   }));

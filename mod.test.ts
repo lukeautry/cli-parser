@@ -25,8 +25,7 @@ Deno.test("parse", async (t) => {
         { _: ["test", "test2"] },
         (b) =>
           b.command("$", {
-            args: {},
-            run: () => undefined,
+            args: (a) => a.run(() => undefined),
             description: "desc",
           }),
       );
@@ -41,8 +40,7 @@ Deno.test("parse", async (t) => {
         { _: [] },
         (b) =>
           b.command("$", {
-            args: {},
-            run: (val) => result = val,
+            args: (a) => a.run((val) => result = val),
             description: "desc",
           }),
       );
@@ -57,14 +55,10 @@ Deno.test("parse", async (t) => {
         { _: [], "node-ids": "str" },
         (b) =>
           b.command("$", {
-            args: {
-              "node-ids": {
-                type: "string",
-              },
-            },
-            run: (val) => {
-              result = val;
-            },
+            args: (a) =>
+              a.add("node-ids", { type: "string" }).run((val) => {
+                result = val;
+              }),
             description: "desc",
           }),
       );
@@ -78,12 +72,8 @@ Deno.test("parse", async (t) => {
         { _: [], "node-ids": true },
         (b) =>
           b.command("$", {
-            args: {
-              "node-ids": {
-                type: "string",
-              },
-            },
-            run: () => undefined,
+            args: (a) =>
+              a.add("node-ids", { type: "string" }).run(() => undefined),
             description: "desc",
           }),
       );
@@ -98,13 +88,10 @@ Deno.test("parse", async (t) => {
         { _: [] },
         (b) =>
           b.command("$", {
-            args: {
-              "node-ids": {
-                type: "string",
-                optional: true,
-              },
-            },
-            run: (val) => result = val,
+            args: (a) =>
+              a.add("node-ids", { type: "string", optional: true }).run((val) =>
+                result = val
+              ),
             description: "desc",
           }),
       );
@@ -119,14 +106,14 @@ Deno.test("parse", async (t) => {
           { _: [] },
           (b) =>
             b.command("$", {
-              args: {
-                "node-ids": {
-                  type: "boolean",
-                  array: true,
-                  optional: true,
-                },
-              },
-              run: () => undefined,
+              args: (a) =>
+                a
+                  .add("node-ids", {
+                    type: "boolean",
+                    array: true,
+                    optional: true,
+                  })
+                  .run(() => undefined),
               description: "desc",
             }),
         );
@@ -140,13 +127,11 @@ Deno.test("parse", async (t) => {
           { _: [], "node-ids": "1234" },
           (b) =>
             b.command("$", {
-              args: {
-                "node-ids": {
+              args: (a) =>
+                a.add("node-ids", {
                   type: "string",
                   array: true,
-                },
-              },
-              run: (val) => result = val,
+                }).run((val) => result = val),
               description: "desc",
             }),
         );
@@ -161,13 +146,14 @@ Deno.test("parse", async (t) => {
           { _: [], "node-ids": ["1234", "5678"] },
           (b) =>
             b.command("$", {
-              args: {
-                "node-ids": {
-                  type: "string",
-                  array: true,
-                },
-              },
-              run: (val) => result = val,
+              args: (a) =>
+                a
+                  .add("node-ids", {
+                    type: "string",
+                    array: true,
+                  })
+                  .run((val) => result = val),
+
               description: "desc",
             }),
         );
@@ -183,12 +169,12 @@ Deno.test("parse", async (t) => {
           { _: [], "int-value": "test" },
           (b) =>
             b.command("$", {
-              args: {
-                "int-value": {
-                  type: "integer",
-                },
-              },
-              run: () => undefined,
+              args: (a) =>
+                a
+                  .add("int-value", {
+                    type: "integer",
+                  })
+                  .run(() => undefined),
               description: "desc",
             }),
         );
@@ -202,12 +188,8 @@ Deno.test("parse", async (t) => {
           { _: [], "int-value": true },
           (b) =>
             b.command("$", {
-              args: {
-                "int-value": {
-                  type: "integer",
-                },
-              },
-              run: () => undefined,
+              args: (a) =>
+                a.add("int-value", { type: "integer" }).run(() => undefined),
               description: "desc",
             }),
         );
@@ -221,12 +203,8 @@ Deno.test("parse", async (t) => {
           { _: [], "int-value": 123.3 },
           (b) =>
             b.command("$", {
-              args: {
-                "int-value": {
-                  type: "integer",
-                },
-              },
-              run: () => undefined,
+              args: (a) =>
+                a.add("int-value", { type: "integer" }).run(() => undefined),
               description: "desc",
             }),
         );
@@ -241,12 +219,10 @@ Deno.test("parse", async (t) => {
           { _: [], "int-value": 123 },
           (b) =>
             b.command("$", {
-              args: {
-                "int-value": {
-                  type: "integer",
-                },
-              },
-              run: (val) => result = val,
+              args: (a) =>
+                a.add("int-value", { type: "integer" }).run((val) => {
+                  result = val;
+                }),
               description: "desc",
             }),
         );
@@ -271,31 +247,16 @@ Deno.test("parse", async (t) => {
         },
         (b) =>
           b.command("$", {
-            args: {
-              "int-value": {
-                type: "integer",
-              },
-              "str-value": {
-                type: "string",
-              },
-              "num-value": {
-                type: "number",
-              },
-              "bool-value": {
-                type: "boolean",
-              },
-              "str-array": {
-                type: "string",
-                array: true,
-              },
-              "zero-value-as-int": {
-                type: "integer",
-              },
-              "zero-value-as-num": {
-                type: "number",
-              },
-            },
-            run: (val) => result = val,
+            args: (a) =>
+              a
+                .add("int-value", { type: "integer" })
+                .add("str-value", { type: "string" })
+                .add("num-value", { type: "number" })
+                .add("bool-value", { type: "boolean" })
+                .add("str-array", { type: "string", array: true })
+                .add("zero-value-as-int", { type: "integer" })
+                .add("zero-value-as-num", { type: "number" })
+                .run((val) => result = val),
             description: "desc",
           }),
       );
@@ -320,32 +281,16 @@ Deno.test("parse", async (t) => {
         },
         (b) =>
           b.command("$", {
-            args: {
-              "int-value": {
-                type: "integer",
-              },
-              "str-value": {
-                type: "string",
-                description: "a string value",
-              },
-              "num-value": {
-                type: "number",
-              },
-              "bool-value": {
-                type: "boolean",
-              },
-              "str-array": {
-                type: "string",
-                array: true,
-              },
-              "zero-value-as-int": {
-                type: "integer",
-              },
-              "zero-value-as-num": {
-                type: "number",
-              },
-            },
-            run: () => undefined,
+            args: (a) =>
+              a
+                .add("int-value", { type: "integer" })
+                .add("str-value", { type: "string" })
+                .add("num-value", { type: "number" })
+                .add("bool-value", { type: "boolean" })
+                .add("str-array", { type: "string", array: true })
+                .add("zero-value-as-int", { type: "integer" })
+                .add("zero-value-as-num", { type: "number" })
+                .run(() => undefined),
             description: "desc",
           }),
       );
@@ -364,9 +309,8 @@ Deno.test("parse", async (t) => {
             b.list("$", {
               commands: (b) =>
                 b.command("first", {
-                  args: {},
+                  args: (a) => a.run(() => undefined),
                   description: "cmd",
-                  run: () => undefined,
                 }),
               description: "desc",
             }),
@@ -384,9 +328,8 @@ Deno.test("parse", async (t) => {
               description: "desc",
               commands: (b) =>
                 b.command("first", {
-                  args: {},
+                  args: (a) => a.run(() => undefined),
                   description: "cmd",
-                  run: () => undefined,
                 }),
             }),
         );
@@ -404,9 +347,8 @@ Deno.test("parse", async (t) => {
               description: "desc",
               commands: (b) =>
                 b.command("first", {
-                  args: {},
+                  args: (a) => a.run((val) => result = val),
                   description: "cmd",
-                  run: (val) => result = val,
                 }),
             }),
         );
@@ -423,13 +365,11 @@ Deno.test("parse", async (t) => {
               description: "desc",
               commands: (b) =>
                 b.command("first", {
-                  args: {
-                    second: {
-                      type: "string",
-                    },
-                  },
+                  args: (a) =>
+                    a.add("second", { type: "string" }).run((val) =>
+                      result = val
+                    ),
                   description: "cmd",
-                  run: (val) => result = val,
                 }),
             }),
         );
@@ -450,12 +390,10 @@ Deno.test("parse", async (t) => {
                   commands: (b) =>
                     b.command("second", {
                       description: "third desc",
-                      args: {
-                        third: {
-                          type: "string",
-                        },
-                      },
-                      run: (val) => result = val,
+                      args: (a) =>
+                        a.add("third", { type: "string" }).run((val) =>
+                          result = val
+                        ),
                     }),
                 }),
             }),
