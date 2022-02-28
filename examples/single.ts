@@ -12,9 +12,7 @@ cliParser(parse(Deno.args), (b) =>
           optional: true,
           array: true,
         }, ["test", "test1"])
-        .add("second", {
-          type: "integer",
-        })
+        .add("second", { type: "integer" })
         .run((v) => {
           console.log(v.first, v.second);
         }),
