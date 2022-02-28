@@ -48,6 +48,7 @@ export type CLIType = keyof CLITypes;
 
 export interface IArgumentOptions<T extends CLIType> {
   type: T;
+  alias?: string;
   array?: boolean;
   optional?: boolean;
   description?: string;
