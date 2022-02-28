@@ -9,8 +9,20 @@ export const parseArgs = <
   options: T,
 ) => {
   return (Object.keys(options)).reduce((result, key) => {
-    const { choices, type, array, optional } = options[key];
-    const rawVal = rawArgs[key];
+    const { choices, type, array, optional, alias } = options[key];
+    let rawVal = rawArgs[key];
+
+    if (alias) {
+      const aliasRawArgs = rawArgs[alias];
+      if (rawVal) {
+        rawVal = Array.isArray(rawVal) ? rawVal.concat(aliasRawArgs) : [
+          rawVal,
+          ...(Array.isArray(aliasRawArgs) ? aliasRawArgs : [aliasRawArgs]),
+        ];
+      } else {
+        rawVal = aliasRawArgs;
+      }
+    }
 
     if (type === "boolean" && array) {
       throw new Error(`arrays not supported for boolean type`);

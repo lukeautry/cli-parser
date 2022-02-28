@@ -35,12 +35,12 @@ OPTIONS:
   
 ${
     args.map(
-      ({ name, type, array, optional, description, choices }) => {
-        return `  --${name}: [${type}${array === true ? "[]" : ""}] [${
-          optional === true ? "optional" : "required"
-        }]${choices ? ` [choices: ${choices.join(", ")}]` : ""}${
-          description ? `\r\n      ${description}` : ""
-        }`;
+      ({ name, type, array, optional, description, choices, alias }) => {
+        return `  --${name}${alias ? `, -${alias}` : ""}: [${type}${
+          array === true ? "[]" : ""
+        }] [${optional === true ? "optional" : "required"}]${
+          choices ? ` [choices: ${choices.join(", ")}]` : ""
+        }${description ? `\r\n      ${description}` : ""}`;
       },
     ).join("\r\n\r\n")
   }

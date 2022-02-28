@@ -124,6 +124,43 @@ Deno.test("parse", async (t) => {
       assertEquals(result, {});
     });
 
+    await t.step("alias", async (t) => {
+      await t.step("accepts alias", () => {
+        let result: Record<never, never> | undefined;
+        cliParser(
+          { _: [], "n": "val" },
+          (b) =>
+            b.command("$", {
+              args: (a) =>
+                a.add("node-ids", { type: "string", alias: "n" }).run((val) =>
+                  result = val
+                ),
+              description: "desc",
+            }),
+        );
+
+        assertExists(result);
+        assertEquals(result, { "node-ids": "val" });
+      });
+
+      await t.step("merges alias and non-alias", () => {
+        let result: Record<never, never> | undefined;
+        cliParser(
+          { _: [], "n": "val", "node-ids": "val2" },
+          (b) =>
+            b.command("$", {
+              args: (a) =>
+                a.add("node-ids", { type: "string", alias: "n", array: true })
+                  .run((val) => result = val),
+              description: "desc",
+            }),
+        );
+
+        assertExists(result);
+        assertEquals(result, { "node-ids": ["val2", "val"] });
+      });
+    });
+
     await t.step("array type", async (t) => {
       await t.step("rejects boolean", () => {
         const result = exec(
