@@ -11,8 +11,7 @@ export interface ICommand {
   args: (a: IArgumentsBuilder) => null;
 }
 
-// deno-lint-ignore ban-types
-export type IArgumentsBuilder<T = {}> = {
+export type IArgumentsBuilder<T = Record<never, never>> = {
   add: <
     N extends string,
     K extends CLIType,
@@ -56,7 +55,7 @@ export interface IArgumentOptions<T extends CLIType> {
 
 export interface IArgumentOptionsWithChoices<T extends CLIType>
   extends IArgumentOptions<T> {
-  choices: ReadonlyArray<CLITypes[T]>;
+  choices?: ReadonlyArray<CLITypes[T]>;
 }
 
 export type ArrayOrSingleFromArgumentOptions<

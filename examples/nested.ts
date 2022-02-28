@@ -18,7 +18,9 @@ cliParser(parse(Deno.args), (b) =>
                   "d",
                   { type: "boolean" },
                 )
-                .run(console.log),
+                .run((v) => {
+                  console.log(v);
+                }),
           }).command("third", {
             description: "Third command",
             args: (a) => a.add("b", { type: "string" }).run(console.log),

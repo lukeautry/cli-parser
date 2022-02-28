@@ -1,4 +1,4 @@
-import { CLIType, CLITypes } from "./types.ts";
+import { CLIType, CLITypes } from "../types.ts";
 
 /**
  * This isn't meant to be an exhaustive parser for the included types.
