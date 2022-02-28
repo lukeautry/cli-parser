@@ -2,6 +2,7 @@ import { Args } from "https://deno.land/std/flags/mod.ts";
 import {
   assertEquals,
   assertExists,
+  assertStringIncludes,
 } from "https://deno.land/std@0.125.0/testing/asserts.ts";
 import { cliParser } from "./mod.ts";
 import { IBuilder } from "./types.ts";
@@ -31,7 +32,8 @@ Deno.test("parse", async (t) => {
       );
 
       assertEquals(result.exitCode, 1);
-      assertEquals(result.message, "unknown command: test");
+      assertExists(result.message);
+      assertStringIncludes(result.message, "unknown command: test");
     });
 
     await t.step("with no args", () => {
@@ -67,6 +69,27 @@ Deno.test("parse", async (t) => {
       assertEquals(result, { "node-ids": "str" });
     });
 
+    await t.step("reject invalid choice", () => {
+      const result = exec(
+        { _: [], "node-ids": "str" },
+        (b) =>
+          b.command("$", {
+            args: (a) =>
+              a.add("node-ids", { type: "string" }, ["str1"]).run(() =>
+                undefined
+              ),
+            description: "desc",
+          }),
+      );
+
+      assertEquals(result.exitCode, 1);
+      assertExists(result.message);
+      assertStringIncludes(
+        result.message,
+        "node-ids: invalid value str. valid choices: str1",
+      );
+    });
+
     await t.step("single arg, flag passed but no value", () => {
       const result = exec(
         { _: [], "node-ids": true },
@@ -79,7 +102,8 @@ Deno.test("parse", async (t) => {
       );
 
       assertEquals(result.exitCode, 1);
-      assertEquals(result.message, "node-ids: expected string");
+      assertExists(result.message);
+      assertStringIncludes(result.message, "node-ids: expected string");
     });
 
     await t.step("optional arg doesn't throw", () => {
@@ -118,7 +142,34 @@ Deno.test("parse", async (t) => {
             }),
         );
         assertEquals(result.exitCode, 1);
-        assertEquals(result.message, "arrays not supported for boolean type");
+        assertExists(result.message);
+        assertStringIncludes(
+          result.message,
+          "arrays not supported for boolean type",
+        );
+      });
+
+      await t.step("rejects invalid choice", () => {
+        const result = exec(
+          { _: [], "node-ids": ["test1", "test3"] },
+          (b) =>
+            b.command("$", {
+              args: (a) =>
+                a
+                  .add("node-ids", {
+                    type: "string",
+                    array: true,
+                  }, ["test1", "test2"])
+                  .run(() => undefined),
+              description: "desc",
+            }),
+        );
+        assertEquals(result.exitCode, 1);
+        assertExists(result.message);
+        assertStringIncludes(
+          result.message,
+          "node-ids: invalid value test3 at index 1. valid choices: test1, test2",
+        );
       });
 
       await t.step("resolves single value", () => {
@@ -180,7 +231,8 @@ Deno.test("parse", async (t) => {
         );
 
         assertEquals(result.exitCode, 1);
-        assertEquals(result.message, "int-value: expected integer");
+        assertExists(result.message);
+        assertStringIncludes(result.message, "int-value: expected integer");
       });
 
       await t.step("rejects boolean flag", () => {
@@ -195,7 +247,8 @@ Deno.test("parse", async (t) => {
         );
 
         assertEquals(result.exitCode, 1);
-        assertEquals(result.message, "int-value: expected integer");
+        assertExists(result.message);
+        assertStringIncludes(result.message, "int-value: expected integer");
       });
 
       await t.step("rejects non-integer number", () => {
@@ -210,7 +263,8 @@ Deno.test("parse", async (t) => {
         );
 
         assertEquals(result.exitCode, 1);
-        assertEquals(result.message, "int-value: expected integer");
+        assertExists(result.message);
+        assertStringIncludes(result.message, "int-value: expected integer");
       });
 
       await t.step("resolves integer", () => {
@@ -317,7 +371,8 @@ Deno.test("parse", async (t) => {
         );
 
         assertEquals(result.exitCode, 1);
-        assertEquals(result.message, "unknown command: first_");
+        assertExists(result.message);
+        assertStringIncludes(result.message, "unknown command: first_");
       });
 
       await t.step("rejects superfluous subcommand", () => {
@@ -335,7 +390,8 @@ Deno.test("parse", async (t) => {
         );
 
         assertEquals(result.exitCode, 1);
-        assertEquals(result.message, "unknown command: second");
+        assertExists(result.message);
+        assertStringIncludes(result.message, "unknown command: second");
       });
 
       await t.step("with no args", () => {

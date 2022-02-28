@@ -2,16 +2,17 @@ import { Args } from "https://deno.land/std@0.126.0/flags/mod.ts";
 import { typeValidators } from "./type-validators.ts";
 import {
   CLIType,
+  CLITypes,
   IArgumentOptions,
+  IArgumentOptionsWithChoices,
   IArgumentsBuilder,
   IBuilder,
   ICommand,
   ICommandList,
-  OptionalityFromArgumentOptions,
 } from "./types.ts";
 
 const parseArgs = <
-  T extends Record<string, IArgumentOptions<CLIType>>,
+  T extends Record<string, IArgumentOptionsWithChoices<CLIType>>,
 >(
   rawArgs: Args,
   args: T,
@@ -26,7 +27,7 @@ const parseArgs = <
 
     if (rawVal === undefined) {
       if (arg.type === "boolean") {
-        result[key] = false as OptionalityFromArgumentOptions<T[string]>;
+        result[key] = false;
         return result;
       }
 
@@ -61,24 +62,70 @@ const parseArgs = <
       );
     }
 
+    if (arg.choices) {
+      const val = result[key];
+
+      if (Array.isArray(val)) {
+        val.forEach((v, i) => {
+          if (!arg.choices.includes(v)) {
+            throw new Error(
+              `${key}: invalid value ${v} at index ${i}. valid choices: ${
+                arg.choices.join(", ")
+              }`,
+            );
+          }
+        });
+      } else {
+        if (!arg.choices.includes(result[key] as CLITypes[CLIType])) {
+          throw new Error(
+            `${key}: invalid value ${result[key]}. valid choices: ${
+              arg.choices.join(", ")
+            }`,
+          );
+        }
+      }
+    }
+
     return result;
-    // deno-lint-ignore no-explicit-any
-  }, {} as any);
+  }, {} as Record<string, CLITypes[CLIType] | CLITypes[CLIType][] | undefined>);
 };
 
-const getCommandHelpText = (config: ICommand) => {
+const getCommandHelpText = (name: string, command: ICommand) => {
+  const args = new Array<
+    IArgumentOptions<CLIType> & {
+      name: string;
+      // deno-lint-ignore no-explicit-any
+      choices: ReadonlyArray<any> | undefined;
+    }
+  >();
+
+  const builder: IArgumentsBuilder = {
+    add: (name, options, choices) => {
+      args.push({
+        ...options,
+        name,
+        choices,
+      });
+      // deno-lint-ignore no-explicit-any
+      return builder as any;
+    },
+    run: () => null,
+  };
+
+  command.args(builder);
+
   return `
-USAGE: $ [OPTIONS]
-${config.description ? `\r\n${config.description}\r\n` : ""}
+USAGE: ${name} [OPTIONS]
+${command.description ? `\r\n${command.description}\r\n` : ""}
 OPTIONS:
 
 ${
-    Object.entries(config.args).map(
-      ([key, value]) => {
-        return `  --${key}: ${value.type}${
-          value.array === true ? "[]" : ""
-        }, [${value.optional === true ? "optional" : "required"}]${
-          value.description ? `\r\n      ${value.description}` : ""
+    args.map(
+      ({ name, type, array, optional, description, choices }) => {
+        return `  --${name}: [${type}${array === true ? "[]" : ""}] [${
+          optional === true ? "optional" : "required"
+        }]${choices ? ` [choices: ${choices.join(", ")}]` : ""}${
+          description ? `\r\n      ${description}` : ""
         }`;
       },
     ).join("\r\n\r\n")
@@ -91,8 +138,6 @@ const getCommandListHelpText = (
   list: ICommandList,
 ) => {
   const commands = getListCommands(list);
-
-  console.log({ commands });
 
   return `
 USAGE: ${name} [COMMAND] [OPTIONS]
@@ -114,12 +159,10 @@ const getListCommands = (list: ICommandList) => {
   const builder: IBuilder = {
     command: (name, options) => {
       commands[name] = options;
-
       return builder;
     },
     list: (name, options) => {
       commands[name] = options;
-
       return builder;
     },
   };
@@ -136,25 +179,31 @@ export const cliParser = (
   },
 ): void => {
   const builder: IBuilder = {
-    command: (_name, options) => {
+    command: (name, options) => {
       if (args.help === true) {
-        onEmit(getCommandHelpText(options), 0);
-        return builder;
-      }
-
-      if (args._.length > 0) {
-        onEmit(`unknown command: ${args._[0]}`, 1);
+        onEmit(getCommandHelpText(name, options), 0);
         return builder;
       }
 
       try {
-        const commandArgs = {} as Record<string, IArgumentOptions<CLIType>>;
+        if (args._.length > 0) {
+          throw new Error(`unknown command: ${args._[0]}`);
+        }
 
-        const builder: IArgumentsBuilder = {
-          add: (name, options) => {
-            commandArgs[name] = options;
+        const commandArgs = {} as Record<
+          string,
+          IArgumentOptionsWithChoices<CLIType>
+        >;
+
+        const argsBuilder: IArgumentsBuilder = {
+          // deno-lint-ignore no-explicit-any
+          add: (name, options, choices: any) => {
+            commandArgs[name] = {
+              ...options,
+              choices,
+            };
             // deno-lint-ignore no-explicit-any
-            return builder as IArgumentsBuilder<any>;
+            return argsBuilder as IArgumentsBuilder<any>;
           },
           run: (fn) => {
             fn(parseArgs(args, commandArgs));
@@ -162,9 +211,12 @@ export const cliParser = (
           },
         };
 
-        options.args(builder);
+        options.args(argsBuilder);
       } catch (err) {
-        onEmit(err.message, 1);
+        onEmit(
+          `\r\nERROR: ${err.message}\r\n${getCommandHelpText(name, options)}`,
+          1,
+        );
       }
 
       return builder;
@@ -180,19 +232,21 @@ export const cliParser = (
 
       const subcommand = commands[commandInput];
       if (!subcommand) {
-        onEmit(`unknown command: ${commandInput}`, 1);
+        onEmit(
+          `\r\nERROR: unknown command: ${commandInput}\r\n${
+            getCommandListHelpText(name, list)
+          }`,
+          1,
+        );
         return;
       }
 
       cliParser(
-        {
-          ...args,
-          _: args._.slice(1),
-        },
+        { ...args, _: args._.slice(1) },
         (b) =>
           "args" in subcommand
-            ? b.command(name, subcommand)
-            : b.list(name, subcommand),
+            ? b.command(`${name} ${commandInput}`, subcommand)
+            : b.list(`${name} ${commandInput}`, subcommand),
         onEmit,
       );
     },

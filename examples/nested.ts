@@ -13,7 +13,7 @@ cliParser(parse(Deno.args), (b) =>
             args: (a) =>
               a
                 .add("b", { type: "string" })
-                .add("c", { type: "integer" })
+                .add("c", { type: "integer", optional: true }, [123, 567])
                 .add(
                   "d",
                   { type: "boolean" },

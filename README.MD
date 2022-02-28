@@ -13,6 +13,7 @@ Support for:
   - string, number, integer, and boolean types
   - array types
   - optional types
+  - enum types
 
 # Usage
 

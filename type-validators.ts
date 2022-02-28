@@ -5,7 +5,10 @@ import { CLIType, CLITypes } from "./types.ts";
  * It should merely validate known value types provided by Deno flag parser.
  */
 export const typeValidators: {
-  [P in CLIType]: (val: unknown, field: string) => CLITypes[P];
+  [P in CLIType]: (
+    val: unknown,
+    field: string,
+  ) => CLITypes[P];
 } = {
   string: (val, field) => {
     if (typeof val === "string") {

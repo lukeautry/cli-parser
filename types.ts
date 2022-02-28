@@ -13,10 +13,23 @@ export interface ICommand {
 
 // deno-lint-ignore ban-types
 export type IArgumentsBuilder<T = {}> = {
-  add: <N extends string, K extends CLIType, O extends IArgumentOptions<K>>(
+  add: <
+    N extends string,
+    K extends CLIType,
+    O extends IArgumentOptions<K>,
+    C extends CLITypes[O["type"]],
+  >(
     name: N,
     options: O,
-  ) => IArgumentsBuilder<T & { [P in N]: TypeFromArgumentOptions<O> }>;
+    choices?: ReadonlyArray<C>,
+  ) => IArgumentsBuilder<
+    & T
+    & {
+      [P in N]: typeof choices extends undefined
+        ? TypeFromArgumentOptions<O, CLITypes[K]>
+        : TypeFromArgumentOptions<O, C>;
+    }
+  >;
   run: (fn: (args: T) => void) => null;
 };
 
@@ -35,26 +48,35 @@ export interface CLITypes {
 export type CLIType = keyof CLITypes;
 
 export interface IArgumentOptions<T extends CLIType> {
-  readonly type: T;
-  readonly array?: boolean;
-  readonly optional?: boolean;
-  readonly description?: string;
+  type: T;
+  array?: boolean;
+  optional?: boolean;
+  description?: string;
+}
+
+export interface IArgumentOptionsWithChoices<T extends CLIType>
+  extends IArgumentOptions<T> {
+  choices: ReadonlyArray<CLITypes[T]>;
 }
 
 export type ArrayOrSingleFromArgumentOptions<
   T extends IArgumentOptions<CLIType>,
-> = T extends { array: true } ? CLITypes[T["type"]][] : CLITypes[T["type"]];
+  V,
+> = T extends { array: true } ? V[] : V;
 
 export type OptionalityFromArgumentOptions<
   T extends IArgumentOptions<CLIType>,
+  V,
 > = T extends { optional: true }
-  ? ArrayOrSingleFromArgumentOptions<T> | undefined
-  : ArrayOrSingleFromArgumentOptions<T>;
+  ? ArrayOrSingleFromArgumentOptions<T, V> | undefined
+  : ArrayOrSingleFromArgumentOptions<T, V>;
 
 export type TypeFromArgumentOptions<
   T extends IArgumentOptions<CLIType>,
-> = OptionalityFromArgumentOptions<T>;
+  V,
+> = OptionalityFromArgumentOptions<T, V>;
 
 export type ParsedArgumentType<
   A extends Record<string, IArgumentOptions<CLIType>>,
-> = { [P in keyof A]: TypeFromArgumentOptions<A[P]> };
+  V,
+> = { [P in keyof A]: TypeFromArgumentOptions<A[P], V> };
