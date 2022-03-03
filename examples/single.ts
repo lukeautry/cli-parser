@@ -4,16 +4,19 @@ import { parse } from "https://deno.land/std/flags/mod.ts";
 cliParser(parse(Deno.args), (b) =>
   b.command("deno run examples/single.ts", {
     description: "This is a CLI with only one command",
-    args: (a) =>
-      a
-        .add("first", {
-          type: "string",
+    args: (a) => {
+      return a
+        .add({
+          name: "first",
           description: "This is the first argument",
-          optional: true,
+          type: "string",
           array: true,
-        }, ["test", "test1"])
-        .add("second", { type: "integer" })
+          choices: ["test", "test1"],
+          default: ["test"],
+        })
+        .add({ name: "second", type: "integer" })
         .run((v) => {
           console.log(v.first, v.second);
-        }),
+        });
+    },
   }));

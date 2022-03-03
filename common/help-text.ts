@@ -1,6 +1,7 @@
 import {
+  ArgumentOptions,
   CLIType,
-  IArgumentOptionsWithChoices,
+  CLITypes,
   IArgumentsBuilder,
   ICommand,
   ICommandList,
@@ -9,22 +10,23 @@ import { getListCommands } from "./list-commands.ts";
 
 export const getCommandHelpText = (name: string, command: ICommand) => {
   const args = new Array<
-    IArgumentOptionsWithChoices<CLIType> & {
-      name: string;
-    }
+    ArgumentOptions<
+      string,
+      CLIType,
+      CLITypes[CLIType],
+      CLITypes[CLIType],
+      boolean,
+      boolean
+    >
   >();
 
   const builder = {
-    add: (name, options, choices) => {
-      args.push({
-        ...options,
-        name,
-        choices,
-      });
+    add: (options) => {
+      args.push(options);
       return builder;
     },
     run: () => null,
-  } as IArgumentsBuilder;
+  } as IArgumentsBuilder<{}>;
 
   command.args(builder);
 

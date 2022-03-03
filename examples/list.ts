@@ -7,6 +7,6 @@ cliParser(parse(Deno.args), (b) =>
     commands: (b) =>
       b.command("first", {
         description: "First command",
-        args: (a) => a.add("a", { type: "string" }).run(console.log),
+        args: (a) => a.add({ name: "a", type: "string" }).run(console.log),
       }),
   }));

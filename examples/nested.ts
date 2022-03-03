@@ -13,17 +13,23 @@ cliParser(parse(Deno.args), (b) =>
               description: "Second command",
               args: (a) =>
                 a
-                  .add("bus", { type: "string", alias: "b" })
-                  .add("car", { type: "integer", optional: true }, [
-                    123,
-                    567,
-                  ])
-                  .add("train", { type: "boolean" })
+                  .add({ name: "bus", type: "string", alias: "b" })
+                  .add({
+                    name: "car",
+                    type: "integer",
+                    optional: true,
+                    choices: [
+                      123,
+                      567,
+                    ],
+                  })
+                  .add({ name: "train", type: "boolean" })
                   .run((v) => console.log(v)),
             })
             .command("third", {
               description: "Third command",
-              args: (a) => a.add("b", { type: "string" }).run(console.log),
+              args: (a) =>
+                a.add({ name: "b", type: "string" }).run(console.log),
             }),
       }),
   }));

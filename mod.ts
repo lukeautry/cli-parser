@@ -6,8 +6,9 @@ import {
 import { getListCommands } from "./common/list-commands.ts";
 import { parseArgs } from "./common/parse-args.ts";
 import {
+  ArgumentOptions,
   CLIType,
-  IArgumentOptionsWithChoices,
+  CLITypes,
   IArgumentsBuilder,
   IBuilder,
 } from "./types.ts";
@@ -33,22 +34,26 @@ export const cliParser = (
 
         const commandOptions = {} as Record<
           string,
-          IArgumentOptionsWithChoices<CLIType>
+          ArgumentOptions<
+            string,
+            CLIType,
+            CLITypes[CLIType],
+            CLITypes[CLIType],
+            boolean,
+            boolean
+          >
         >;
 
         const argsBuilder = {
-          add: (name, options, choices) => {
-            commandOptions[name] = {
-              ...options,
-              choices,
-            };
+          add: (options) => {
+            commandOptions[options.name] = options;
             return argsBuilder;
           },
           run: (fn) => {
             fn(parseArgs(args, commandOptions));
             return null;
           },
-        } as IArgumentsBuilder;
+        } as IArgumentsBuilder<{}>;
 
         options.args(argsBuilder);
       } catch (err) {

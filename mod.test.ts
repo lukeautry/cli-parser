@@ -58,7 +58,7 @@ Deno.test("parse", async (t) => {
         (b) =>
           b.command("$", {
             args: (a) =>
-              a.add("node-ids", { type: "string" }).run((val) => {
+              a.add({ name: "node-ids", type: "string" }).run((val) => {
                 result = val;
               }),
             description: "desc",
@@ -75,9 +75,8 @@ Deno.test("parse", async (t) => {
         (b) =>
           b.command("$", {
             args: (a) =>
-              a.add("node-ids", { type: "string" }, ["str1"]).run(() =>
-                undefined
-              ),
+              a.add({ name: "node-ids", type: "string", choices: ["str1"] })
+                .run(() => undefined),
             description: "desc",
           }),
       );
@@ -96,7 +95,7 @@ Deno.test("parse", async (t) => {
         (b) =>
           b.command("$", {
             args: (a) =>
-              a.add("node-ids", { type: "string" }).run(() => undefined),
+              a.add({ name: "node-ids", type: "string" }).run(() => undefined),
             description: "desc",
           }),
       );
@@ -113,15 +112,34 @@ Deno.test("parse", async (t) => {
         (b) =>
           b.command("$", {
             args: (a) =>
-              a.add("node-ids", { type: "string", optional: true }).run((val) =>
-                result = val
-              ),
+              a.add({ name: "node-ids", type: "string", optional: true }).run((
+                val,
+              ) => result = val),
             description: "desc",
           }),
       );
 
       assertExists(result);
       assertEquals(result, {});
+    });
+
+    await t.step("default arg has value set", () => {
+      let result: Record<never, never> | undefined;
+      cliParser(
+        { _: [] },
+        (b) =>
+          b.command("$", {
+            args: (a) =>
+              a.add({ name: "node-ids", type: "string", default: "test123" })
+                .run((
+                  val,
+                ) => result = val),
+            description: "desc",
+          }),
+      );
+
+      assertExists(result);
+      assertEquals(result, { "node-ids": "test123" });
     });
 
     await t.step("alias", async (t) => {
@@ -132,9 +150,9 @@ Deno.test("parse", async (t) => {
           (b) =>
             b.command("$", {
               args: (a) =>
-                a.add("node-ids", { type: "string", alias: "n" }).run((val) =>
-                  result = val
-                ),
+                a.add({ name: "node-ids", type: "string", alias: "n" }).run((
+                  val,
+                ) => result = val),
               description: "desc",
             }),
         );
@@ -150,7 +168,12 @@ Deno.test("parse", async (t) => {
           (b) =>
             b.command("$", {
               args: (a) =>
-                a.add("node-ids", { type: "string", alias: "n", array: true })
+                a.add({
+                  name: "node-ids",
+                  type: "string",
+                  alias: "n",
+                  array: true,
+                })
                   .run((val) => result = val),
               description: "desc",
             }),
@@ -158,6 +181,27 @@ Deno.test("parse", async (t) => {
 
         assertExists(result);
         assertEquals(result, { "node-ids": ["val2", "val"] });
+      });
+
+      await t.step("uses main command even with alias configured", () => {
+        let result: Record<never, never> | undefined;
+        cliParser(
+          { _: [], "node-ids": "val2" },
+          (b) =>
+            b.command("$", {
+              args: (a) =>
+                a.add({
+                  name: "node-ids",
+                  type: "string",
+                  alias: "n",
+                })
+                  .run((val) => result = val),
+              description: "desc",
+            }),
+        );
+
+        assertExists(result);
+        assertEquals(result, { "node-ids": "val2" });
       });
     });
 
@@ -169,7 +213,8 @@ Deno.test("parse", async (t) => {
             b.command("$", {
               args: (a) =>
                 a
-                  .add("node-ids", {
+                  .add({
+                    name: "node-ids",
                     type: "boolean",
                     array: true,
                     optional: true,
@@ -193,10 +238,15 @@ Deno.test("parse", async (t) => {
             b.command("$", {
               args: (a) =>
                 a
-                  .add("node-ids", {
+                  .add({
+                    name: "node-ids",
                     type: "string",
                     array: true,
-                  }, ["test1", "test2"])
+                    choices: [
+                      "test1",
+                      "test2",
+                    ],
+                  })
                   .run(() => undefined),
               description: "desc",
             }),
@@ -216,10 +266,9 @@ Deno.test("parse", async (t) => {
           (b) =>
             b.command("$", {
               args: (a) =>
-                a.add("node-ids", {
-                  type: "string",
-                  array: true,
-                }).run((val) => result = val),
+                a.add({ name: "node-ids", type: "string", array: true }).run((
+                  val,
+                ) => result = val),
               description: "desc",
             }),
         );
@@ -236,10 +285,7 @@ Deno.test("parse", async (t) => {
             b.command("$", {
               args: (a) =>
                 a
-                  .add("node-ids", {
-                    type: "string",
-                    array: true,
-                  })
+                  .add({ name: "node-ids", type: "string", array: true })
                   .run((val) => result = val),
 
               description: "desc",
@@ -259,9 +305,7 @@ Deno.test("parse", async (t) => {
             b.command("$", {
               args: (a) =>
                 a
-                  .add("int-value", {
-                    type: "integer",
-                  })
+                  .add({ name: "int-value", type: "integer" })
                   .run(() => undefined),
               description: "desc",
             }),
@@ -278,7 +322,9 @@ Deno.test("parse", async (t) => {
           (b) =>
             b.command("$", {
               args: (a) =>
-                a.add("int-value", { type: "integer" }).run(() => undefined),
+                a.add({ name: "int-value", type: "integer" }).run(() =>
+                  undefined
+                ),
               description: "desc",
             }),
         );
@@ -294,7 +340,9 @@ Deno.test("parse", async (t) => {
           (b) =>
             b.command("$", {
               args: (a) =>
-                a.add("int-value", { type: "integer" }).run(() => undefined),
+                a.add({ name: "int-value", type: "integer" }).run(() =>
+                  undefined
+                ),
               description: "desc",
             }),
         );
@@ -311,7 +359,7 @@ Deno.test("parse", async (t) => {
           (b) =>
             b.command("$", {
               args: (a) =>
-                a.add("int-value", { type: "integer" }).run((val) => {
+                a.add({ name: "int-value", type: "integer" }).run((val) => {
                   result = val;
                 }),
               description: "desc",
@@ -340,13 +388,13 @@ Deno.test("parse", async (t) => {
           b.command("$", {
             args: (a) =>
               a
-                .add("int-value", { type: "integer" })
-                .add("str-value", { type: "string" })
-                .add("num-value", { type: "number" })
-                .add("bool-value", { type: "boolean" })
-                .add("str-array", { type: "string", array: true })
-                .add("zero-value-as-int", { type: "integer" })
-                .add("zero-value-as-num", { type: "number" })
+                .add({ name: "int-value", type: "integer" })
+                .add({ name: "str-value", type: "string" })
+                .add({ name: "num-value", type: "number" })
+                .add({ name: "bool-value", type: "boolean" })
+                .add({ name: "str-array", type: "string", array: true })
+                .add({ name: "zero-value-as-int", type: "integer" })
+                .add({ name: "zero-value-as-num", type: "number" })
                 .run((val) => result = val),
             description: "desc",
           }),
@@ -374,13 +422,13 @@ Deno.test("parse", async (t) => {
           b.command("$", {
             args: (a) =>
               a
-                .add("int-value", { type: "integer" })
-                .add("str-value", { type: "string" })
-                .add("num-value", { type: "number" })
-                .add("bool-value", { type: "boolean" })
-                .add("str-array", { type: "string", array: true })
-                .add("zero-value-as-int", { type: "integer" })
-                .add("zero-value-as-num", { type: "number" })
+                .add({ name: "int-value", type: "integer" })
+                .add({ name: "str-value", type: "string" })
+                .add({ name: "num-value", type: "number" })
+                .add({ name: "bool-value", type: "boolean" })
+                .add({ name: "str-array", type: "string", array: true })
+                .add({ name: "zero-value-as-int", type: "integer" })
+                .add({ name: "zero-value-as-num", type: "number" })
                 .run(() => undefined),
             description: "desc",
           }),
@@ -459,7 +507,7 @@ Deno.test("parse", async (t) => {
               commands: (b) =>
                 b.command("first", {
                   args: (a) =>
-                    a.add("second", { type: "string" }).run((val) =>
+                    a.add({ name: "second", type: "string" }).run((val) =>
                       result = val
                     ),
                   description: "cmd",
@@ -484,7 +532,7 @@ Deno.test("parse", async (t) => {
                     b.command("second", {
                       description: "third desc",
                       args: (a) =>
-                        a.add("third", { type: "string" }).run((val) =>
+                        a.add({ name: "third", type: "string" }).run((val) =>
                           result = val
                         ),
                     }),

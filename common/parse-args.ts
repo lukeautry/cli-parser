@@ -1,18 +1,29 @@
 import { Args } from "https://deno.land/std@0.126.0/flags/mod.ts";
-import { CLIType, CLITypes, IArgumentOptionsWithChoices } from "../types.ts";
+import { ArgumentOptions, CLIType, CLITypes } from "../types.ts";
 import { typeValidators } from "./type-validators.ts";
 
 export const parseArgs = <
-  T extends Record<string, IArgumentOptionsWithChoices<CLIType>>,
+  T extends Record<
+    string,
+    ArgumentOptions<
+      string,
+      CLIType,
+      CLITypes[CLIType],
+      CLITypes[CLIType],
+      boolean,
+      boolean
+    >
+  >,
 >(
   rawArgs: Args,
   options: T,
 ) => {
   return (Object.keys(options)).reduce((result, key) => {
-    const { choices, type, array, optional, alias } = options[key];
+    const argOptions = options[key];
+    const { choices, type, array, optional, alias } = argOptions;
     let rawVal = rawArgs[key];
 
-    if (alias) {
+    if (alias && rawArgs[alias]) {
       const aliasRawArgs = rawArgs[alias];
       if (rawVal) {
         rawVal = Array.isArray(rawVal) ? rawVal.concat(aliasRawArgs) : [
@@ -22,6 +33,10 @@ export const parseArgs = <
       } else {
         rawVal = aliasRawArgs;
       }
+    }
+
+    if (!rawVal && "default" in argOptions) {
+      rawVal = argOptions.default;
     }
 
     if (type === "boolean" && array) {
