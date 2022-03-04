@@ -11,11 +11,12 @@ import {
   CLITypes,
   IArgumentsBuilder,
   IBuilder,
+  IRootBuilder,
 } from "./types.ts";
 
 export const cliParser = (
   args: Args,
-  fn: (builder: IBuilder) => void,
+  fn: (builder: IRootBuilder) => void,
   onEmit = (message: string, _exitCode: number) => {
     console.log(message);
   },
@@ -29,7 +30,8 @@ export const cliParser = (
 
       try {
         if (args._.length > 0) {
-          throw new Error(`unknown command: ${args._[0]}`);
+          onEmit(`unknown command: ${args._[0]}`, 1);
+          return builder;
         }
 
         const commandOptions = {} as Record<
@@ -71,7 +73,7 @@ export const cliParser = (
       const commandInput = args._[0];
       if (!commandInput) {
         onEmit(getCommandListHelpText(name, list), 1);
-        return;
+        return builder;
       }
 
       const subcommand = commands[commandInput];
@@ -82,7 +84,7 @@ export const cliParser = (
           }`,
           1,
         );
-        return;
+        return builder;
       }
 
       cliParser(
@@ -93,6 +95,8 @@ export const cliParser = (
             : b.list(`${name} ${commandInput}`, subcommand),
         onEmit,
       );
+
+      return builder;
     },
   };
 

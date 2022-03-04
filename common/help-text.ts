@@ -37,11 +37,25 @@ OPTIONS:
   
 ${
     args.map(
-      ({ name, type, array, optional, description, choices, alias }) => {
+      (options) => {
+        const { name, type, array, optional, description, choices, alias } =
+          options;
+
         return `  --${name}${alias ? `, -${alias}` : ""}: [${type}${
           array === true ? "[]" : ""
-        }] [${optional === true ? "optional" : "required"}]${
-          choices ? ` [choices: ${choices.join(", ")}]` : ""
+        }] [${
+          optional === true ||
+            ("default" in options && options.default !== undefined)
+            ? "optional"
+            : "required"
+        }]${choices ? ` [choices: ${choices.join(", ")}]` : ""}${
+          "default" in options
+            ? ` [default: ${
+              Array.isArray(options.default)
+                ? `[${options.default}]`
+                : options.default
+            }]`
+            : ""
         }${description ? `\r\n      ${description}` : ""}`;
       },
     ).join("\r\n\r\n")

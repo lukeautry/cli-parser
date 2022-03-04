@@ -5,9 +5,9 @@ import {
   assertStringIncludes,
 } from "https://deno.land/std@0.125.0/testing/asserts.ts";
 import { cliParser } from "./mod.ts";
-import { IBuilder } from "./types.ts";
+import { IRootBuilder } from "./types.ts";
 
-const exec = (args: Args, fn: (builder: IBuilder) => void) => {
+const exec = (args: Args, fn: (builder: IRootBuilder) => void) => {
   let result: { message: string | undefined; exitCode: number | undefined } = {
     message: undefined,
     exitCode: undefined,

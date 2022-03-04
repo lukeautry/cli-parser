@@ -1,10 +1,11 @@
-export interface IBuilder {
-  command: (
-    name: string,
-    options: ICommand,
-  ) => IBuilder;
-  list: (name: string, options: ICommandList) => void;
+interface IBaseBuilder<T> {
+  command: (name: string, options: ICommand) => T;
+  list: (name: string, options: ICommandList) => T;
 }
+
+export type IRootBuilder = IBaseBuilder<void>;
+
+export type IBuilder = IBaseBuilder<IBuilder>;
 
 export interface ICommand {
   description: string;

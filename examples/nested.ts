@@ -17,7 +17,7 @@ cliParser(parse(Deno.args), (b) =>
                   .add({
                     name: "car",
                     type: "integer",
-                    optional: true,
+                    default: 123,
                     choices: [
                       123,
                       567,
@@ -31,5 +31,15 @@ cliParser(parse(Deno.args), (b) =>
               args: (a) =>
                 a.add({ name: "b", type: "string" }).run(console.log),
             }),
-      }),
+      })
+        .command("fourth", {
+          description: "Fourth Command",
+          args: (a) =>
+            a.add({
+              name: "apple",
+              type: "string",
+              array: true,
+              default: ["abc", "def"],
+            }).run(console.log),
+        }),
   }));
